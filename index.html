@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Passport Control: vocabulary game</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--cover:#12303a;--paper:#e6ece7;--line:#c9d3cc;--ink:#1d2a2e;--soft:#5d6d70;--ok:#23704a;--no:#b3261e;--vio:#4b3a8c;--btn:#f5f8f5;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--cover:#0a1a20;--paper:#1f2c2f;--line:#33444a;--ink:#e3ebe6;--soft:#93a5a6;--ok:#5fc08a;--no:#ff8a80;--vio:#b9a8ff;--btn:#26373b;color-scheme:dark}}
+:root[data-theme="dark"]{--cover:#0a1a20;--paper:#1f2c2f;--line:#33444a;--ink:#e3ebe6;--soft:#93a5a6;--ok:#5fc08a;--no:#ff8a80;--vio:#b9a8ff;--btn:#26373b;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--cover);color:var(--ink);font:18px/1.5 "PT Serif",Georgia,serif;display:flex;justify-content:center;padding:20px 14px}
+main{width:100%;max-width:520px}
+.page{background:var(--paper);background-image:repeating-linear-gradient(transparent 0 35px,var(--line) 35px 36px);border-radius:4px 14px 14px 4px;border-left:10px double var(--soft);padding:26px 22px 28px;position:relative;min-height:520px;overflow:hidden}
+h1,h2,.stampfont{font-family:Oswald,"Arial Narrow",sans-serif;letter-spacing:.02em}
+h1{font-size:40px;line-height:1.05;margin:6px 0 14px;font-weight:700;color:var(--vio)}
+h2{font-size:30px;margin:4px 0 10px;font-weight:700}
+p{margin:0 0 14px}
+.btn{display:block;width:100%;text-align:left;background:var(--btn);color:var(--ink);border:2px solid var(--ink);border-radius:2px;padding:12px 14px;margin:0 0 10px;font:inherit;cursor:pointer;transition:transform .08s}
+.btn:active{transform:translateY(2px)}
+.btn:focus-visible{outline:3px solid var(--vio);outline-offset:2px}
+.btn.go{background:var(--vio);color:var(--paper);border-color:var(--vio);text-align:center;font-family:Oswald,sans-serif;font-size:22px;font-weight:500}
+.btn.right{border-color:var(--ok);box-shadow:inset 0 0 0 2px var(--ok)}
+.btn.wrong{border-color:var(--no);text-decoration:line-through}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:15px;color:var(--soft);margin-bottom:12px}
+.pages{display:flex;gap:5px}.pages i{width:14px;height:18px;border:2px solid var(--ink);border-radius:1px;display:block}.pages i.off{opacity:.2;transform:rotate(8deg)}
+.bar{height:6px;background:var(--line);margin-bottom:22px}.bar b{display:block;height:100%;background:var(--vio);width:0;transition:width .3s}
+.ask{font-size:15px;color:var(--soft);margin:0}
+.word{font-family:Oswald,sans-serif;font-size:44px;line-height:1.15;font-weight:700;margin:2px 0 20px;word-break:break-word}
+.stamp{position:absolute;right:14px;top:96px;border:5px solid;border-radius:8px;padding:2px 14px;font:700 34px/1.2 Oswald,sans-serif;opacity:0;pointer-events:none;transform:rotate(-14deg)}
+.stamp.ok{color:var(--ok);border-color:var(--ok)}.stamp.no{color:var(--no);border-color:var(--no)}
+.stamp.hit{animation:hit .35s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes hit{from{opacity:0;transform:scale(2.4) rotate(-4deg)}to{opacity:.88;transform:scale(1) rotate(-14deg)}}
+.miss{padding-left:20px;margin:0 0 18px}.miss li{margin-bottom:4px}
+.hint{font-size:14px;color:var(--soft)}
+@media (prefers-reduced-motion:reduce){.stamp.hit{animation:none;opacity:.88}.btn{transition:none}}
+</style>
+</head>
+<body>
+<main><div class="page" id="page"></div></main>
+<script>
+const W=[["to take something seriously","относиться серьёзно"],["materials","материалы, пособия"],["grammar book","учебник грамматики"],["phrase book","разговорник"],["to form your own sentences","строить свои предложения"],["vocabulary","словарный запас"],["comprehension","понимание"],["context","контекст"],["to pick up from context","понимать из контекста"],["subtitles","субтитры"],["to read out loud","читать вслух"],["newspaper","газета"],["technical writing","технический текст"],["to get used to something","привыкнуть к чему-либо"],["to roll the Rs","раскатывать «р»"],["native speaker","носитель языка"],["language exchange","языковой обмен"],["to study abroad","учиться за границей"],["to make mistakes","делать ошибки"],["accent","акцент"],["to have confidence in yourself","верить в себя"],["to loosen up your tongue","развязать язык"],["to get stuck","застрять, не знать, что сказать"],["to improve","улучшать(ся)"],["if worse comes to worse","в худшем случае"],["a little bit goes a long way","немного помогает очень сильно"],["vice versa","наоборот"],["to get over yourself","перестать слишком переживать о себе"],["to be supposed to","быть должным, ожидаться"]];
+const LIVES=5;
+const page=document.getElementById("page");
+let queue,total,done,lives,missed,locked,cur;
+const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+
+function cover(){
+  page.innerHTML=`<h1>Passport Control</h1>
+  <p>Every word is an entry. Translate it and the officer stamps your passport. A mistake costs you a page, and any word you miss comes back in the queue later.</p>
+  <p class="hint">You have ${LIVES} pages and ${W.length} words. You can press 1, 2, 3.</p>
+  <button class="btn go" id="go">Approach the booth</button>`;
+  document.getElementById("go").onclick=()=>start(W);
+}
+function start(list){
+  queue=sh(list);total=queue.length;done=0;lives=LIVES;missed=new Set();next();
+}
+function next(){
+  locked=false;cur=queue[0];
+  const toRu=Math.random()<.5, q=toRu?cur[0]:cur[1], a=toRu?cur[1]:cur[0], k=toRu?1:0;
+  const wrong=sh(W.filter(w=>w!==cur)).slice(0,2).map(w=>w[k]);
+  const opts=sh([a,...wrong]);
+  page.innerHTML=`<div class="top"><span>Checked ${done} of ${total}</span><span class="pages" aria-label="Pages left: ${lives}">${Array.from({length:LIVES},(_,i)=>`<i class="${i<lives?"":"off"}"></i>`).join("")}</span></div>
+  <div class="bar"><b style="width:${done/total*100}%"></b></div>
+  <p class="ask">${toRu?"What does this mean?":"How do you say this in English?"}</p>
+  <div class="word" lang="${toRu?"en":"ru"}">${q}</div>
+  <div id="opts"></div><div class="stamp stampfont" id="st"></div>`;
+  const box=document.getElementById("opts");
+  opts.forEach((o,i)=>{const b=document.createElement("button");b.className="btn";b.textContent=(i+1)+". "+o;b.onclick=()=>answer(b,o===a,box);b.dataset.ok=o===a?1:0;box.appendChild(b)});
+}
+function answer(btn,ok,box){
+  if(locked)return;locked=true;
+  const st=document.getElementById("st");
+  st.className="stamp stampfont "+(ok?"ok":"no")+" hit";st.textContent=ok?"Approved":"Denied";
+  [...box.children].forEach(b=>{if(b.dataset.ok==="1")b.classList.add("right")});
+  queue.shift();
+  if(ok){done++}else{btn.classList.add("wrong");lives--;missed.add(cur);queue.splice(Math.min(3,queue.length),0,cur)}
+  setTimeout(()=>{if(lives<=0)end(false);else if(!queue.length)end(true);else next()},ok?650:1500);
+}
+function end(win){
+  const m=[...missed];
+  page.innerHTML=`<h2 style="color:var(${win?"--ok":"--no"})">${win?"Entry granted":"Entry denied"}</h2>
+  <p>${win?`All ${total} words got a stamp.`:`Stamps earned: ${done} of ${total}. You ran out of pages.`}</p>
+  ${m.length?`<p>Words you stumbled on:</p><ul class="miss">${m.map(w=>`<li>${w[0]} — ${w[1]}</li>`).join("")}</ul>`:`<p>Not a single mistake. The officer is impressed.</p>`}
+  ${m.length?`<button class="btn go" id="r1">Practise only these words</button>`:""}
+  <button class="btn" id="r2">New passport, all words</button>`;
+  if(m.length)document.getElementById("r1").onclick=()=>start(m);
+  document.getElementById("r2").onclick=()=>start(W);
+}
+document.addEventListener("keydown",e=>{
+  const b=document.querySelectorAll("#opts .btn");
+  if(b.length&&"123".includes(e.key)&&b[e.key-1])b[e.key-1].click();
+});
+cover();
+</script>
+</body>
+</html>
